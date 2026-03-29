@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>A7MED AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0f0520;
+    --surface: #1a0a35;
+    --card: #2d1b4e;
+    --border: #5a3585;
+    --purple: #7c3aed;
+    --purple2: #a855f7;
+    --purple3: #d4a8ff;
+    --pink: #c084fc;
+    --text: #f0e8ff;
+    --muted: #a07cc5;
+    --user-bubble: #3b1f6e;
+    --ai-bubble: #2d1b4e;
+    --accent: #00d4aa;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── ANIMATED BG ── */
+  .bg-orbs {
+    position: fixed; inset:0; pointer-events:none; z-index:0;
+    overflow:hidden;
+  }
+  .orb {
+    position:absolute; border-radius:50%;
+    filter: blur(80px); opacity:.15;
+    animation: drift 12s ease-in-out infinite alternate;
+  }
+  .orb1 { width:500px; height:500px; background:#6b21a8; top:-100px; right:-100px; animation-delay:0s; }
+  .orb2 { width:400px; height:400px; background:#4c1d95; bottom:-100px; left:-100px; animation-delay:-4s; }
+  .orb3 { width:300px; height:300px; background:#7c3aed; top:50%; left:50%; animation-delay:-8s; }
+
+  @keyframes drift {
+    from { transform: translate(0,0) scale(1); }
+    to   { transform: translate(30px,20px) scale(1.1); }
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: relative; z-index:10;
+    background: rgba(26,10,53,.9);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: .9rem 1.5rem;
+    display: flex; align-items:center; justify-content:space-between;
+    flex-shrink:0;
+  }
+
+  .logo {
+    display:flex; align-items:center; gap:.7rem;
+  }
+  .logo-icon {
+    width:38px; height:38px; border-radius:10px;
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.1rem; font-weight:900; color:#fff;
+    box-shadow: 0 0 20px rgba(124,58,237,.4);
+  }
+  .logo-text { font-size:1.15rem; font-weight:900; }
+  .logo-text span { 
+    background: linear-gradient(90deg, var(--purple2), var(--pink));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .logo-sub { font-size:.72rem; color:var(--muted); font-weight:400; display:block; margin-top:-2px; }
+
+  .header-badge {
+    display:flex; align-items:center; gap:.4rem;
+    background: rgba(0,212,170,.12);
+    border: 1px solid rgba(0,212,170,.35);
+    border-radius:100px; padding:.3rem .8rem;
+    font-size:.75rem; color:#00d4aa;
+  }
+  .dot { width:6px; height:6px; border-radius:50%; background:#22c55e; animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ── CHAT AREA ── */
+  #chat {
+    flex:1; overflow-y:auto; overflow-x:hidden;
+    padding: 1.5rem 1rem;
+    position:relative; z-index:5;
+    scroll-behavior:smooth;
+  }
+
+  #chat::-webkit-scrollbar { width:4px; }
+  #chat::-webkit-scrollbar-track { background:transparent; }
+  #chat::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+  /* ── WELCOME ── */
+  .welcome {
+    text-align:center;
+    padding: 3rem 1rem;
+    animation: fadeUp .6s ease;
+  }
+  .welcome-icon {
+    width:80px; height:80px; border-radius:24px; margin:0 auto 1.2rem;
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    display:flex; align-items:center; justify-content:center;
+    font-size:2rem;
+    box-shadow: 0 0 40px rgba(124,58,237,.3);
+  }
+  .welcome h1 { font-size:1.6rem; font-weight:900; margin-bottom:.4rem; }
+  .welcome h1 span {
+    background: linear-gradient(90deg, var(--purple2), var(--pink));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .welcome p { color:var(--muted); font-size:.92rem; max-width:400px; margin:.5rem auto 2rem; line-height:1.7; }
+
+  /* tabs */
+  .tabs {
+    display:flex; gap:.5rem; justify-content:center; margin-bottom:1rem;
+  }
+  .tab-btn {
+    background:var(--card); border:1px solid var(--border);
+    color:var(--muted); border-radius:100px; padding:.35rem 1rem;
+    font-family:'Cairo',sans-serif; font-size:.8rem; cursor:pointer;
+    transition:all .2s;
+  }
+  .tab-btn.active {
+    background:rgba(124,58,237,.2); border-color:var(--purple);
+    color:var(--purple3); font-weight:700;
+  }
+
+  .suggestions {
+    display:flex; flex-wrap:wrap; gap:.6rem; justify-content:center;
+    max-width:640px; margin:0 auto;
+  }
+  .sug-panel { display:none; width:100%; }
+  .sug-panel.active { display:flex; flex-wrap:wrap; gap:.6rem; justify-content:center; }
+
+  .sug-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius:12px; padding:.55rem 1rem;
+    font-family:'Cairo',sans-serif; font-size:.82rem;
+    cursor:pointer; transition: all .2s;
+    direction:rtl; text-align:right;
+  }
+  .sug-btn:hover {
+    border-color: var(--purple);
+    background: rgba(124,58,237,.1);
+    transform:translateY(-2px);
+  }
+  .sug-btn.course {
+    border-color: rgba(168,85,247,.3);
+    background: rgba(124,58,237,.08);
+    display:flex; flex-direction:column; gap:.15rem;
+    width:100%; max-width:300px;
+  }
+  .sug-btn.course:hover { border-color:var(--purple2); background:rgba(124,58,237,.18); }
+  .sug-btn.course .course-name { font-weight:700; font-size:.85rem; }
+  .sug-btn.course .course-sub { font-size:.72rem; color:var(--muted); }
+
+  /* ── MESSAGES ── */
+  .msg-wrap {
+    display:flex; gap:.8rem; margin-bottom:1.2rem;
+    animation: fadeUp .3s ease;
+    align-items:flex-end;
+  }
+  .msg-wrap.user { flex-direction:row-reverse; }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(12px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  .avatar {
+    width:34px; height:34px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:.85rem; font-weight:900; flex-shrink:0;
+  }
+  .avatar.ai {
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    box-shadow: 0 0 12px rgba(124,58,237,.3);
+    font-size:1rem;
+  }
+  .avatar.user {
+    background: linear-gradient(135deg, #1e40af, #3b82f6);
+  }
+
+  .bubble {
+    max-width: min(75%, 580px);
+    padding: .85rem 1.1rem;
+    border-radius:18px;
+    font-size:.92rem; line-height:1.8;
+    word-break:break-word;
+  }
+  .bubble.user {
+    background: linear-gradient(135deg, #312e81, #1e1b4b);
+    border: 1px solid rgba(124,58,237,.3);
+    border-bottom-left-radius:4px;
+    text-align:right;
+  }
+  .bubble.ai {
+    background: var(--ai-bubble);
+    border: 1px solid var(--border);
+    border-bottom-right-radius:4px;
+    text-align:right;
+  }
+
+  .bubble.ai pre {
+    background:#0d0d15; border:1px solid var(--border);
+    border-radius:10px; padding:.8rem; margin:.6rem 0;
+    overflow-x:auto; font-size:.82rem; direction:ltr; text-align:left;
+    font-family:'Courier New', monospace;
+  }
+  .bubble.ai code {
+    background:#0d0d15; padding:2px 6px; border-radius:4px;
+    font-size:.82rem; direction:ltr;
+  }
+  .bubble.ai strong { color:var(--purple3); }
+
+  /* typing indicator */
+  .typing {
+    display:flex; gap:4px; align-items:center; padding:.3rem .2rem;
+  }
+  .typing span {
+    width:7px; height:7px; border-radius:50%;
+    background:var(--purple2); opacity:.4;
+    animation: bounce 1.2s ease infinite;
+  }
+  .typing span:nth-child(2) { animation-delay:.2s; }
+  .typing span:nth-child(3) { animation-delay:.4s; }
+  @keyframes bounce {
+    0%,80%,100% { transform:translateY(0); opacity:.4; }
+    40% { transform:translateY(-6px); opacity:1; }
+  }
+
+  /* ── INPUT AREA ── */
+  .input-area {
+    position:relative; z-index:10;
+    background: rgba(26,10,53,.95);
+    backdrop-filter:blur(20px);
+    border-top:1px solid var(--border);
+    padding: .8rem 1rem 1rem;
+    flex-shrink:0;
+  }
+
+  .input-box {
+    display:flex; gap:.6rem; align-items:flex-end;
+    background: var(--card);
+    border:1px solid var(--border);
+    border-radius:16px; padding:.6rem .6rem .6rem 1rem;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .input-box:focus-within {
+    border-color: var(--purple);
+    box-shadow: 0 0 0 3px rgba(124,58,237,.15);
+  }
+
+  #user-input {
+    flex:1; background:transparent; border:none; outline:none;
+    color:var(--text); font-family:'Cairo',sans-serif; font-size:.93rem;
+    resize:none; max-height:140px; min-height:22px;
+    direction:rtl; text-align:right; line-height:1.6;
+    padding:.2rem 0;
+  }
+  #user-input::placeholder { color:var(--muted); }
+
+  #send-btn {
+    width:38px; height:38px; border-radius:10px; border:none;
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    color:#fff; cursor:pointer; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1rem; transition: transform .15s, box-shadow .15s;
+    box-shadow: 0 0 15px rgba(124,58,237,.3);
+  }
+  #send-btn:hover:not(:disabled) { transform:scale(1.05); box-shadow:0 0 25px rgba(124,58,237,.5); }
+  #send-btn:disabled { opacity:.4; cursor:not-allowed; }
+
+  .input-footer {
+    text-align:center; margin-top:.5rem;
+    font-size:.7rem; color:var(--muted);
+  }
+  .input-footer span {
+    background: linear-gradient(90deg, var(--purple2), var(--pink));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    font-weight:700;
+  }
+
+  /* ── CLEAR BTN ── */
+  #clear-btn {
+    background:transparent; border:1px solid var(--border);
+    color:var(--muted); border-radius:8px; padding:.3rem .7rem;
+    font-family:'Cairo',sans-serif; font-size:.75rem; cursor:pointer;
+    transition:all .2s;
+  }
+  #clear-btn:hover { border-color:#ef4444; color:#ef4444; }
+
+  /* ── ERROR ── */
+  .error-bubble {
+    background: rgba(239,68,68,.1);
+    border:1px solid rgba(239,68,68,.3);
+    color:#fca5a5; border-radius:12px; padding:.7rem 1rem;
+    font-size:.85rem; margin:.5rem 0; text-align:center;
+  }
+
+  @media(max-width:500px){
+    .welcome h1 { font-size:1.3rem; }
+    .bubble { max-width:88%; }
+  }
+
+  /* LOGIN SCREEN */
+  #login-screen {
+    position:fixed; inset:0; z-index:999;
+    background: linear-gradient(135deg, #0f0520, #1a0a35);
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column; padding:2rem;
+  }
+  .login-box {
+    background: var(--card); border:1px solid var(--border);
+    border-radius:20px; padding:2rem 1.5rem;
+    width:100%; max-width:340px; text-align:center;
+    box-shadow: 0 0 40px rgba(124,58,237,.2);
+  }
+  .login-icon {
+    width:70px; height:70px; border-radius:20px; margin:0 auto 1rem;
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.8rem; box-shadow: 0 0 30px rgba(124,58,237,.4);
+  }
+  .login-box h2 { font-size:1.3rem; font-weight:900; margin-bottom:.3rem; }
+  .login-box h2 span {
+    background: linear-gradient(90deg, var(--purple2), var(--pink));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .login-box p { color:var(--muted); font-size:.85rem; margin-bottom:1.5rem; }
+  #login-input {
+    width:100%; background: var(--surface);
+    border:1px solid var(--border); border-radius:12px;
+    padding:.75rem 1rem; color:var(--text);
+    font-family:'Cairo',sans-serif; font-size:.95rem;
+    text-align:center; outline:none; margin-bottom:1rem;
+    transition: border-color .2s;
+  }
+  #login-input:focus { border-color:var(--purple); }
+  #login-btn {
+    width:100%; padding:.75rem;
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    border:none; border-radius:12px; color:#fff;
+    font-family:'Cairo',sans-serif; font-size:1rem; font-weight:700;
+    cursor:pointer; transition: transform .15s, box-shadow .15s;
+    box-shadow: 0 0 20px rgba(124,58,237,.3);
+  }
+  #login-btn:hover { transform:scale(1.02); }
+  #login-error { color:#fca5a5; font-size:.82rem; margin-top:.5rem; display:none; }
+
+  /* UPLOAD BTN */
+  #attach-btn {
+    width:38px; height:38px; border-radius:10px; border:1px solid var(--border);
+    background: var(--surface); color:var(--muted); cursor:pointer; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.1rem; transition: all .2s;
+  }
+  #attach-btn:hover { border-color:var(--purple); color:var(--purple3); }
+  #file-input { display:none; }
+  .file-preview {
+    background: rgba(124,58,237,.1); border:1px solid rgba(124,58,237,.3);
+    border-radius:10px; padding:.5rem .8rem; font-size:.8rem; color:var(--purple3);
+    margin-bottom:.5rem; display:flex; align-items:center; justify-content:space-between; gap:.5rem;
+  }
+  .file-preview button { background:none; border:none; color:var(--muted); cursor:pointer; font-size:.9rem; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-icon">🔐</div>
+    <h2>أهلاً بك في <span>A7MED AI</span></h2>
+    <p>أدخل كلمة المرور للدخول</p>
+    <input type="password" id="login-input" placeholder="كلمة المرور..." onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button id="login-btn" onclick="doLogin()">دخول 🚀</button>
+    <div id="login-error">❌ كلمة المرور غلط، حاول تاني</div>
+  </div>
+</div>
+
+<div class="bg-orbs">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">A7</div>
+    <div>
+      <div class="logo-text"><span>A7MED</span> AI 💜</div>
+      <span class="logo-sub">مساعدك الذكي الشخصي</span>
+    </div>
+  </div>
+  <div style="display:flex;gap:.6rem;align-items:center">
+    <a href="https://stdch.menofia.education/static/index.html" target="_blank" rel="noopener"
+      style="display:flex;align-items:center;gap:.4rem;background:linear-gradient(135deg,#5b21b6,#7c3aed);
+      color:#fff;border-radius:8px;padding:.35rem .8rem;font-family:'Cairo',sans-serif;
+      font-size:.78rem;font-weight:700;text-decoration:none;transition:opacity .2s;white-space:nowrap;"
+      onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+      🎓 المنصة
+    </a>
+    <a href="https://wa.me/201151707112" target="_blank" rel="noopener"
+      style="display:flex;align-items:center;gap:.4rem;background:linear-gradient(135deg,#25d366,#128c7e);
+      color:#fff;border-radius:8px;padding:.35rem .8rem;font-family:'Cairo',sans-serif;
+      font-size:.78rem;font-weight:700;text-decoration:none;transition:opacity .2s;white-space:nowrap;"
+      onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+      💬 تواصل
+    </a>
+    <button id="clear-btn" onclick="clearChat()">🗑 مسح</button>
+    <div class="header-badge"><div class="dot"></div> متصل</div>
+  </div>
+</header>
+
+<!-- CHAT -->
+<div id="chat">
+  <div class="welcome" id="welcome">
+    <div class="welcome-icon">🤖</div>
+    <h1>أهلاً بك في <span>A7MED AI</span></h1>
+    <p>مساعد ذكاء اصطناعي — اختر مادة لكتابة تكليف كامل، أو اسألني أي شيء!</p>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('courses',this)">🎓 تكاليف المواد</button>
+      <button class="tab-btn" onclick="switchTab('general',this)">💬 عام</button>
+    </div>
+
+    <div class="suggestions">
+      <!-- COURSES TAB -->
+      <div class="sug-panel active" id="tab-courses">
+        <button class="sug-btn course" onclick="sendCourse('إنتاج ومعالجة الصور الرقمية')">
+          <span class="course-name">🖼️ إنتاج ومعالجة الصور الرقمية</span>
+          
+        </button>
+        <button class="sug-btn course" onclick="sendCourse('الاختبارات الإلكترونية')">
+          <span class="course-name">📝 الاختبارات الإلكترونية</span>
+          
+        </button>
+        <button class="sug-btn course" onclick="sendCourse('التصميم الجرافيكي')">
+          <span class="course-name">🎨 التصميم الجرافيكي</span>
+          
+        </button>
+        <button class="sug-btn course" onclick="sendCourse('التعلم الإلكتروني')">
+          <span class="course-name">💻 التعلم الإلكتروني</span>
+          
+        </button>
+        <button class="sug-btn course" onclick="sendCourse('القضايا المجتمعية')">
+          <span class="course-name">🌍 القضايا المجتمعية</span>
+          
+        </button>
+        <button class="sug-btn course" onclick="sendCourse('تطبيقات سطح المكتب MS Office')">
+          <span class="course-name">🖥️ تطبيقات MS Office</span>
+          
+        </button>
+        <button class="sug-btn course" onclick="sendCourse('طرق تدريس عامة')">
+          <span class="course-name">📚 طرق تدريس عامة</span>
+          
+        </button>
+        <button class="sug-btn course" onclick="sendCourse('لغات برمجة حديثة')">
+          <span class="course-name">⌨️ لغات برمجة حديثة</span>
+          
+        </button>
+        <button class="sug-btn course" onclick="sendCourse('مدخل العلوم النفسية')">
+          <span class="course-name">🧠 مدخل العلوم النفسية</span>
+          
+        </button>
+        <button class="sug-btn course" onclick="sendCourse('نظم تشغيل الحاسب الآلي')">
+          <span class="course-name">⚙️ نظم تشغيل الحاسب الآلي</span>
+          
+        </button>
+      </div>
+
+      <!-- GENERAL TAB -->
+      <div class="sug-panel" id="tab-general">
+        <button class="sug-btn" onclick="sendSuggestion(this)">✍️ اكتب لي موضوع تعبير</button>
+        <button class="sug-btn" onclick="sendSuggestion(this)">💻 علمني برمجة HTML</button>
+        <button class="sug-btn" onclick="sendSuggestion(this)">🌍 ترجم نص للإنجليزية</button>
+        <button class="sug-btn" onclick="sendSuggestion(this)">📖 لخص لي موضوعاً</button>
+        <button class="sug-btn" onclick="sendSuggestion(this)">🧮 احل لي مسألة رياضية</button>
+        <button class="sug-btn" onclick="sendSuggestion(this)">🎨 أفكار تصميم إبداعية</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INPUT -->
+<div class="input-area">
+  <div id="file-preview-area"></div>
+  <div class="input-box">
+    <input type="file" id="file-input" accept="image/*,.pdf" onchange="handleFile(this)"/>
+    <button id="attach-btn" onclick="document.getElementById('file-input').click()" title="إرفاق ملف">📎</button>
+    <textarea id="user-input" rows="1" placeholder="اكتب أي شيء تريده..."></textarea>
+    <button id="send-btn" onclick="sendMessage()" title="إرسال">➤</button>
+  </div>
+  <div class="input-footer">طُوِّر بواسطة <span>A7MED 💜</span></div>
+</div>
+
+<script>
+// ── LOGIN ──
+function doLogin() {
+  const val = document.getElementById('login-input').value;
+  const err = document.getElementById('login-error');
+  if (val === '200739@#$') {
+    document.getElementById('login-screen').style.display = 'none';
+    err.style.display = 'none';
+  } else {
+    err.style.display = 'block';
+    document.getElementById('login-input').value = '';
+  }
+}
+
+// ── FILE UPLOAD ──
+let attachedFile = null; // { type, base64, mimeType, name }
+
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const maxSize = file.type === 'application/pdf' ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
+  if (file.size > maxSize) {
+    alert('الملف كبير جداً! الحد الأقصى ' + (file.type === 'application/pdf' ? '10MB' : '5MB'));
+    input.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const base64 = e.target.result.split(',')[1];
+    attachedFile = { base64, mimeType: file.type, name: file.name };
+    const area = document.getElementById('file-preview-area');
+    area.innerHTML = `<div class="file-preview">
+      <span>${file.type.startsWith('image/') ? '🖼️' : '📄'} ${file.name}</span>
+      <button onclick="removeFile()">✕</button>
+    </div>`;
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function removeFile() {
+  attachedFile = null;
+  document.getElementById('file-preview-area').innerHTML = '';
+}
+
+
+const chatEl = document.getElementById('chat');
+const inputEl = document.getElementById('user-input');
+const sendBtn = document.getElementById('send-btn');
+let messages = [];
+let isLoading = false;
+
+// Auto-resize textarea
+inputEl.addEventListener('input', () => {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 140) + 'px';
+});
+
+// Send on Enter (Shift+Enter = newline)
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.sug-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+function sendSuggestion(btn) {
+  const txt = btn.textContent.trim().replace(/^[\S]+\s/, '');
+  inputEl.value = txt;
+  sendMessage();
+}
+
+function sendCourse(courseName) {
+  inputEl.value = `اكتب لي تكليف كامل جاهز للتسليم لمادة "${courseName}" — يشمل مقدمة، محتوى وافي، وخاتمة، بأسلوب أكاديمي مناسب لطالب جامعي.`;
+  sendMessage();
+}
+
+function clearChat() {
+  messages = [];
+  chatEl.innerHTML = `
+    <div class="welcome" id="welcome">
+      <div class="welcome-icon">🤖</div>
+      <h1>أهلاً بك في <span style="background:linear-gradient(90deg,#a855f7,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent">A7MED AI</span></h1>
+      <p>مساعد ذكاء اصطناعي — اختر مادة لكتابة تكليف كامل، أو اسألني أي شيء!</p>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('courses',this)">🎓 تكاليف المواد</button>
+        <button class="tab-btn" onclick="switchTab('general',this)">💬 عام</button>
+      </div>
+      <div class="suggestions">
+        <div class="sug-panel active" id="tab-courses">
+          <button class="sug-btn course" onclick="sendCourse('إنتاج ومعالجة الصور الرقمية')"><span class="course-name">🖼️ إنتاج ومعالجة الصور الرقمية</span></button>
+          <button class="sug-btn course" onclick="sendCourse('الاختبارات الإلكترونية')"><span class="course-name">📝 الاختبارات الإلكترونية</span></button>
+          <button class="sug-btn course" onclick="sendCourse('التصميم الجرافيكي')"><span class="course-name">🎨 التصميم الجرافيكي</span></button>
+          <button class="sug-btn course" onclick="sendCourse('التعلم الإلكتروني')"><span class="course-name">💻 التعلم الإلكتروني</span></button>
+          <button class="sug-btn course" onclick="sendCourse('القضايا المجتمعية')"><span class="course-name">🌍 القضايا المجتمعية</span></button>
+          <button class="sug-btn course" onclick="sendCourse('تطبيقات سطح المكتب MS Office')"><span class="course-name">🖥️ تطبيقات MS Office</span></button>
+          <button class="sug-btn course" onclick="sendCourse('طرق تدريس عامة')"><span class="course-name">📚 طرق تدريس عامة</span></button>
+          <button class="sug-btn course" onclick="sendCourse('لغات برمجة حديثة')"><span class="course-name">⌨️ لغات برمجة حديثة</span></button>
+          <button class="sug-btn course" onclick="sendCourse('مدخل العلوم النفسية')"><span class="course-name">🧠 مدخل العلوم النفسية</span></button>
+          <button class="sug-btn course" onclick="sendCourse('نظم تشغيل الحاسب الآلي')"><span class="course-name">⚙️ نظم تشغيل الحاسب الآلي</span></button>
+        </div>
+        <div class="sug-panel" id="tab-general">
+          <button class="sug-btn" onclick="sendSuggestion(this)">✍️ اكتب لي موضوع تعبير</button>
+          <button class="sug-btn" onclick="sendSuggestion(this)">💻 علمني برمجة HTML</button>
+          <button class="sug-btn" onclick="sendSuggestion(this)">🌍 ترجم نص للإنجليزية</button>
+          <button class="sug-btn" onclick="sendSuggestion(this)">📖 لخص لي موضوعاً</button>
+          <button class="sug-btn" onclick="sendSuggestion(this)">🧮 احل لي مسألة رياضية</button>
+          <button class="sug-btn" onclick="sendSuggestion(this)">🎨 أفكار تصميم إبداعية</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function appendMsg(role, content) {
+  const welcome = document.getElementById('welcome');
+  if (welcome) welcome.remove();
+
+  const wrap = document.createElement('div');
+  wrap.className = `msg-wrap ${role}`;
+
+  const av = document.createElement('div');
+  av.className = `avatar ${role}`;
+  av.textContent = role === 'ai' ? '🤖' : '👤';
+
+  const bubble = document.createElement('div');
+  bubble.className = `bubble ${role}`;
+
+  if (role === 'ai') {
+    bubble.innerHTML = formatText(content);
+  } else {
+    bubble.textContent = content;
+  }
+
+  wrap.appendChild(av);
+  wrap.appendChild(bubble);
+  chatEl.appendChild(wrap);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  return bubble;
+}
+
+function formatText(text) {
+  // code blocks
+  text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) =>
+    `<pre><code>${escHtml(code.trim())}</code></pre>`);
+  // inline code
+  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // bold
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // newlines
+  text = text.replace(/\n/g, '<br/>');
+  return text;
+}
+
+function escHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function showTyping() {
+  const welcome = document.getElementById('welcome');
+  if (welcome) welcome.remove();
+
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-wrap ai';
+  wrap.id = 'typing-wrap';
+
+  const av = document.createElement('div');
+  av.className = 'avatar ai';
+  av.textContent = '🤖';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble ai';
+  bubble.innerHTML = `<div class="typing"><span></span><span></span><span></span></div>`;
+
+  wrap.appendChild(av);
+  wrap.appendChild(bubble);
+  chatEl.appendChild(wrap);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing-wrap');
+  if (t) t.remove();
+}
+
+async function sendMessage() {
+  const text = inputEl.value.trim();
+  if (!text && !attachedFile || isLoading) return;
+
+  isLoading = true;
+  sendBtn.disabled = true;
+  inputEl.value = '';
+  inputEl.style.height = 'auto';
+
+  const displayText = text + (attachedFile ? ` 📎 ${attachedFile.name}` : '');
+  appendMsg('user', displayText);
+  messages.push({ role: 'user', content: text || 'حلل هذا الملف' });
+
+  const currentFile = attachedFile;
+  removeFile();
+
+  showTyping();
+
+  try {
+    const GEMINI_KEY = 'gen-lang-client-0861610112';
+    const systemPrompt = `أنت مساعد ذكاء اصطناعي متقدم اسمك "A7MED AI"، طوّرك مبرمج موهوب اسمه A7MED.
+تتحدث باللغة العربية دائماً.
+لو سألك أحد عن هويتك أو من طوّرك، قل فقط إنك "A7MED AI" مساعد ذكي طوّره A7MED. لا تذكر Gemini أو Google أبداً.
+
+عندما يطلب المستخدم تكليفاً لمادة جامعية، اكتب تكليفاً أكاديمياً كاملاً واحترافياً يشمل:
+- عنوان واضح للتكليف
+- مقدمة شاملة (فقرة أو فقرتين)
+- محتوى وافي ومنظم بعناوين فرعية ونقاط
+- خاتمة تلخص أهم النقاط
+- المراجع (إن لزم)
+الأسلوب أكاديمي مناسب لطالب جامعي، والمحتوى حقيقي ومفيد وليس مجرد كلام عام.
+
+لأي طلب آخر: كن مفيداً ودقيقاً وودوداً. استخدم الإيموجي باعتدال.`;
+
+    const geminiContents = messages.map((m, i) => {
+      const parts = [{ text: m.content }];
+      // أضف الملف للرسالة الأخيرة فقط
+      if (i === messages.length - 1 && currentFile) {
+        parts.push({ inline_data: { mime_type: currentFile.mimeType, data: currentFile.base64 } });
+      }
+      return { role: m.role === 'assistant' ? 'model' : 'user', parts };
+    });
+
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: geminiContents,
+        generationConfig: { maxOutputTokens: 2000, temperature: 0.7 }
+      })
+    });
+
+    const data = await res.json();
+    removeTyping();
+
+    if (data.error) throw new Error(data.error.message);
+
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'عذراً، حدث خطأ ما.';
+    messages.push({ role: 'assistant', content: reply });
+    appendMsg('ai', reply);
+
+  } catch (err) {
+    removeTyping();
+    const errDiv = document.createElement('div');
+    errDiv.className = 'error-bubble';
+    errDiv.textContent = '⚠️ خطأ في الاتصال: ' + err.message;
+    chatEl.appendChild(errDiv);
+    chatEl.scrollTop = chatEl.scrollHeight;
+    messages.pop();
+  }
+
+  isLoading = false;
+  sendBtn.disabled = false;
+  inputEl.focus();
+}
+</script>
+</body>
+</html>
